@@ -1,18 +1,24 @@
-package main
+package craigslisting
 
 import (
   "github.com/kuchigo/h5parser"
   "strings"
-  "fmt"
   "time"
+  "fmt"
   )
 
-func main(){
+func GetListings(thresholdTime float64, value int)(int, string){
  returnedUrl := h5parser.ParseAndPrint()
- for _,urlData := range returnedUrl {
+ currentIndex := -1
+ for urlData,_ := range returnedUrl {
+  currentIndex++
+  if currentIndex < value {
+   continue
+  }
   //get the google encoded address
-  address, err := h5parser.ParseForAddress(urlData)
+  address, phoneNumber, err := h5parser.ParseForAddress(urlData)
   if err == nil && strings.TrimSpace(address) != "" {
+   fmt.Println(phoneNumber)
    //split address to get google recognizable address
    locs := strings.Split(address, "loc%3A+")
    //google registration required to make lot of queries
@@ -20,11 +26,13 @@ func main(){
    if len(locs) == 2 {
     //TODO : Add the start time as parameter, currently it is encoded to some future date
     duration := h5parser.TransitTimeCaluclator(locs[1],"625+Harrison+Street+SanFrancisco+CA")
-    //if it is less than 1 hour 10 minutes get it
-    if duration < 4200 {
-     fmt.Println(urlData, " takes time ", duration)
+    if duration < thresholdTime {
+     return currentIndex,fmt.Sprint(urlData, " takes time ", duration, " ", phoneNumber)
     }
    }
+  } else {
+    fmt.Println(err)
   }
  }
+ return -1,""
 }
